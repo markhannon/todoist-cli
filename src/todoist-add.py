@@ -16,17 +16,16 @@ import os
 import sys
 import todoist
 
-
-def ping(host):
-    """
-    Returns True if host responds to a ping request
-    """
-    import os, platform
-
-    ping_str = "-n 1" if  platform.system().lower()=="windows" else "-c 1"
-
-    return os.system("ping " + ping_str + " " + host) == 0
-
+def is_reachable(proxy_value):
+  try:
+    host = proxy_value.split(':')[0]
+    port = proxy_value.split(':')[1]
+    s = socket.create_connection((host, port), 1)
+    return True
+  except:
+     pass
+  return False
+  
 def main(args):
     
     ''' Parse arguments into options dictionary '''
@@ -77,11 +76,11 @@ def main(args):
     if config.has_section('Network'):
         
         http_proxy = config.get('Network', 'http_proxy')
-        if http_proxy != '' and ping(http_proxy.split(":")[0]):
+        if http_proxy != '' and is_reachable(http_proxy):
             os.environ['HTTP_PROXY'] = http_proxy
             
         https_proxy = config.get('Network', 'https_proxy')
-        if https_proxy != '' and ping(http_proxy.split(":")[0]):
+        if https_proxy != '' and is_reachable(https_proxy):
             os.environ['HTTPS_PROXY'] = https_proxy
 
     ''' Use the user Todoist API key to connect '''
