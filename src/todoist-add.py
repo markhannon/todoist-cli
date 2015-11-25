@@ -20,7 +20,7 @@ def is_reachable(proxy_value):
   try:
     host = proxy_value.split(':')[0]
     port = proxy_value.split(':')[1]
-    s = socket.create_connection((host, port), 1)
+    s = socket.create_connection((host, port), 2)
     return True
   except:
      pass
@@ -76,11 +76,13 @@ def main(args):
     if config.has_section('Network'):
         
         http_proxy = config.get('Network', 'http_proxy')
-        if http_proxy != '' and is_reachable(http_proxy):
+        #if http_proxy != '' and is_reachable(http_proxy):
+        if http_proxy != '':
             os.environ['HTTP_PROXY'] = http_proxy
             
         https_proxy = config.get('Network', 'https_proxy')
-        if https_proxy != '' and is_reachable(https_proxy):
+        #if https_proxy != '' and is_reachable(https_proxy):
+        if https_proxy != '':
             os.environ['HTTPS_PROXY'] = https_proxy
 
     ''' Use the user Todoist API key to connect '''
