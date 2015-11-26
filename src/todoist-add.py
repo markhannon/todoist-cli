@@ -14,6 +14,13 @@ import argparse
 import ConfigParser
 import os
 import sys
+import urllib2
+
+''' 
+https://github.com/pacparser/pacparser
+https://developer.todoist.com/#api-overview
+'''
+import pacparser
 import todoist
 
 def is_reachable(proxy_value):
@@ -63,6 +70,7 @@ def main(args):
     [Authentication]
     api=xxxx
     [Network]
+    proxy_pac=zzzz
     http_proxy=xxxx
     https_proxy=yyyy
     '''
@@ -74,16 +82,44 @@ def main(args):
         sys.exit(1)
         
     if config.has_section('Network'):
-        
-        http_proxy = config.get('Network', 'http_proxy')
-        #if http_proxy != '' and is_reachable(http_proxy):
-        if http_proxy != '':
-            os.environ['HTTP_PROXY'] = http_proxy
-            
-        https_proxy = config.get('Network', 'https_proxy')
-        #if https_proxy != '' and is_reachable(https_proxy):
-        if https_proxy != '':
-            os.environ['HTTPS_PROXY'] = https_proxy
+      
+        if config.has_option('Network', 'proxy_pac'):
+
+            proxy_pac = config.get('Network', 'proxy_pac')
+
+            if proxy_pac != '':
+
+                ''' Check if proxy pac exists - if so use it to set proxy '''
+
+                try:
+
+                    response = urllib2.urlopen(proxy_pac)
+                    pac_file_contents = response.read()
+
+                    pacparser.init()
+                    pacparser.parse_pac_string(pac_file_contents)
+                    https_proxy = pacparser.find_proxy('https://todoist.com', 'todoist.com').split(' ')[1]
+                    pacparser.cleanup()
+
+                    ''' Set the proxy environment '''
+                    os.environ['HTTP_PROXY'] = https_proxy
+                    os.environ['HTTPS_PROXY'] = https_proxy
+
+                except IOError as e:
+
+                    print e
+
+        else:
+
+            ''' Check if explicit proxy exists and use '''
+
+            http_proxy = config.get('Network', 'http_proxy')
+            if http_proxy != '':
+                os.environ['HTTP_PROXY'] = http_proxy
+                
+            https_proxy = config.get('Network', 'https_proxy')
+            if https_proxy != '':
+                os.environ['HTTPS_PROXY'] = https_proxy
 
     ''' Use the user Todoist API key to connect '''
         
@@ -110,8 +146,12 @@ def main(args):
         result = api.commit()
         
         if debug:
+            print "Result:"
             print result
+            print "Settings:"
             print "API Key=" + api_key
+            if proxy_pac:
+                print "PAC=" + proxy_pac
             print "HTTP_PROXY=" + os.getenv('HTTP_PROXY', "Not set")
             print "HTTPS_PROXY=" + os.getenv('HTTPS_PROXY', "Not set")
     
