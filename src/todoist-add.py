@@ -93,7 +93,7 @@ def main(args):
 
                 try:
 
-                    response = urllib2.urlopen(proxy_pac)
+                    response = urllib2.urlopen(proxy_pac, None, 1)
                     pac_file_contents = response.read()
 
                     pacparser.init()
