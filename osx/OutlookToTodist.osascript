@@ -1,0 +1,56 @@
+#!/usr/bin/osascript
+#
+# Applescript to parse the selected message from Outlook and create a Todoist task
+# using a seperate python script implemeting the Todoist API 
+#
+
+tell application "/Applications/Microsoft Outlook.App"
+	
+	set msgCount to count current messages
+	if (msgCount < 1) then
+		return
+	end if
+	
+	-- assign the list of selected messages
+	set selectedMessages to current messages
+	
+	-- looping through the selected messages
+	repeat with thisMessage in selectedMessages
+		
+		-- extract the subject, sender name, message ID 
+		-- and the content of the message
+		--  and assign it to the corresponding variables
+		
+		set thisSubject to subject of thisMessage
+		set thisSender to sender of thisMessage
+		
+		set thisDate to (time received of thisMessage) as text
+		
+		try
+			set thisSenderName to name of thisSender
+		on error
+			set thisSenderName to address of thisSender
+		end try
+		
+		-- Prompt for Task name
+		
+		set thisItem to text returned of ¬
+			(display dialog "Enter item name for task relating to: " & ¬
+				linefeed & quoted form of thisSubject ¬
+				with title "Add Outlook Mail to Todoist" default answer thisSubject)
+		
+		-- Send the task to Todoist using python script
+		set thisCommand to ¬
+			(system attribute "HOME") & "/Library/Scripts/Applications/Todoist/todoist-add.py" & ¬
+			" --item \"" & thisItem & "\"" & " --note \"" & ¬
+			"From:" & tab & thisSenderName & linefeed & ¬
+			"Subject:" & tab & thisSubject & linefeed & ¬
+			"Received:" & tab & thisDate & "\""
+		
+		do shell script thisCommand
+		
+	end repeat
+	
+end tell
+
+
